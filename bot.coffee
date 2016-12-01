@@ -4,7 +4,8 @@ meta = require "node-metainspector"
 mongoose = require "mongoose"
 requireDir = require "require-dir"
 
-modules = requireDir('./modules')
+modules = requireDir './modules'
+alias = require './alias'
 
 mongoose.connect 'mongodb://localhost:27017/nano-chan'
 db = mongoose.connection
@@ -29,7 +30,11 @@ db.once 'open', ->
 				from: from
 				to: to
 				args: args
-			else bot.say to, "#{from}: Unknown command."
+			else if alias[command] then alias[command].func bot,
+				from: from
+				to: to
+				args: args
+			else bot.say to, "#{from}: Unknown command"
 		else if message.match /^\?./
 			split = message.split ' '
 			command = split[0].substring 1
