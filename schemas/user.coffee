@@ -8,5 +8,6 @@ userSchema = new Schema
   github: String,
   domain: String,
   hws: [String],
-  waifu: String
+  waifu: String,
+  hscrs: [String]
 module.exports = userSchema
