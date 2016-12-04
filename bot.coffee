@@ -22,6 +22,7 @@ db.once 'open', ->
 			bot.say to, "Reporting in! [node.js] (https://github.com/nuclearcoconut42/nano-chan)"
 		else if message.match /^\.help/
 			bot.say from, "List of commands: #{JSON.stringify Object.keys(modules)}"
+			bot.say from, "Find help on individual commands with ?[command] (without brackets)"
 		else if message.match /^\./
 			split = message.split ' '
 			command = split[0].substring 1
