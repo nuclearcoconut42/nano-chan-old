@@ -7,6 +7,6 @@ userSchema = new Schema
   distro: String,
   github: String,
   domain: String,
-  hws: [String]
-
+  hws: [String],
+  waifu: String
 module.exports = userSchema
