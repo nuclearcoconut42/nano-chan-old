@@ -6,7 +6,7 @@ User = mongoose.model('User', userSchema)
 
 hscr = (bot, data) ->
   if data.args.length == 0
-    viewDtops data.to, data.from, bot
+    viewHscrs data.to, data.from, bot
   else
     switch data.args[0]
       when "-a", "--add"
@@ -19,17 +19,17 @@ hscr = (bot, data) ->
           bot.say data.to, "#{data.from}: Arguments are required for -a."
       when "-d", "--delete", "--remove"
         if data.args.length > 1
-          deleteDtop data.from, data.to, data.args[1..], bot
+          deleteHscr data.from, data.to, data.args[1..], bot
         else
           bot.say data.to, "#{data.from}: Arguments are required for -d."
       when "-r", "--replace"
         if data.args.length > 1
-          replaceDtop data.from, data.to, data.args[1..], bot
+          replaceHscr data.from, data.to, data.args[1..], bot
         else
           bot.say data.to, "#{data.from}: Arguments are required for -r."
-      else viewDtops data.to, data.args[0], bot
+      else viewHscrs data.to, data.args[0], bot
 
-viewDtops = (channel, nick, bot) ->
+viewHscrs = (channel, nick, bot) ->
   User.findOne {nick: nick}, (err, doc) ->
     if err then console.error "An error occurred: #{err}"
     if doc
@@ -69,7 +69,7 @@ addUser = (nick, channel, urls, bot) ->
       if urls.length > 1 then bot.say channel, "#{nick}: Saved new homescreens."
       else bot.say channel, "#{nick}: Saved new homescreen."
 
-deleteDtop = (nick, channel, args, bot) ->
+deleteHscr = (nick, channel, args, bot) ->
   User.findOne {nick: nick}, (err, doc) ->
     if err then console.error "An error occurred: #{err}"
     if doc
@@ -110,7 +110,7 @@ deleteDtop = (nick, channel, args, bot) ->
               if err then console.error "An error occurred: #{err}"
     else bot.say channel, "#{nick}: You don't have any homescreens to delete."
 
-replaceDtop = (nick, channel, args, bot) ->
+replaceHscr = (nick, channel, args, bot) ->
   User.findOne {nick: nick}, (err, doc) ->
     if err then console.error "An error occured: #{err}"
     else

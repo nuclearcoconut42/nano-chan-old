@@ -32,8 +32,7 @@ dtop = (bot, data) ->
 viewDtops = (channel, nick, bot) ->
   User.findOne {nick: nick}, (err, doc) ->
     if err then console.error "An error occurred: #{err}"
-		console.log doc
-		if doc
+    if doc
       if doc.dtops.length == 0
         bot.say channel, "No desktops found for #{nick}."
       else
