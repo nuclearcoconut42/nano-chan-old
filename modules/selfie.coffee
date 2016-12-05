@@ -4,7 +4,7 @@ mongoose = require "mongoose"
 
 User = mongoose.model('User', userSchema)
 
-dtop = (bot, data) ->
+selfie = (bot, data) ->
   if data.args.length == 0
     viewDtops data.to, data.from, bot
   else
@@ -32,68 +32,67 @@ dtop = (bot, data) ->
 viewDtops = (channel, nick, bot) ->
   User.findOne {nick: nick}, (err, doc) ->
     if err then console.error "An error occurred: #{err}"
-		console.log doc
-		if doc
-      if doc.dtops.length == 0
-        bot.say channel, "No desktops found for #{nick}."
+		if doc?
+      if doc.selfies.length == 0
+        bot.say channel, "No selfies found for #{nick}."
       else
         i = 0
         say = "(#{nick}) "
-        while i < doc.dtops.length - 1
-          say += "[#{i + 1}] #{doc.dtops[i]} "
+        while i < doc.selfies.length - 1
+          say += "[#{i + 1}] #{doc.selfies[i]} "
           i++
-        say += "[#{doc.dtops.length}] #{doc.dtops[doc.dtops.length - 1]}"
+        say += "[#{doc.selfies.length}] #{doc.dtops[doc.dtops.length - 1]}"
         bot.say channel, say
     else
-      bot.say channel, "No desktops found for #{nick}."
+      bot.say channel, "No selfies found for #{nick}."
 
 checkUser = (nick, channel, urls, bot) ->
   User.findOne {nick: nick}, (err, doc) ->
     if err then console.error "An error occurred: #{err}"
     if doc
-      doc.dtops = doc.dtops.concat urls[..10 - doc.dtops.length]
+      doc.selfies = doc.dtops.concat urls[..10 - doc.dtops.length]
       doc.save (err) ->
         if err then console.error "An error occurred: #{err}"
         else
-          if urls.length > 1 then bot.say channel, "#{nick}: Saved new desktops."
-          else  bot.say channel, "#{nick}: Saved new desktop."
+          if urls.length > 1 then bot.say channel, "#{nick}: Saved new selfies."
+          else  bot.say channel, "#{nick}: Saved new selfie."
     if !doc
       addUser nick, channel, urls, bot
 
 addUser = (nick, channel, urls, bot) ->
   newUser = new User
     nick: nick
-    dtops: urls
+    selfies: urls
   newUser.save (err) ->
     if err then console.err "An error occurred: #{err}"
     else
-      if urls.length > 1 then bot.say channel, "#{nick}: Saved new desktops."
-      else bot.say channel, "#{nick}: Saved new desktop."
+      if urls.length > 1 then bot.say channel, "#{nick}: Saved new selfies."
+      else bot.say channel, "#{nick}: Saved new selfie."
 
 deleteDtop = (nick, channel, args, bot) ->
   User.findOne {nick: nick}, (err, doc) ->
     if err then console.error "An error occurred: #{err}"
     if doc
-      if doc.dtops.length == 0
-        bot.say channel, "#{nick}: You don't have any desktops to delete."
+      if doc.selfies.length == 0
+        bot.say channel, "#{nick}: You don't have any selfies to delete."
       else
         if args[0] == "*"
-          doc.dtops = []
-          bot.say channel, "#{nick}: All desktops deleted."
+          doc.selfies = []
+          bot.say channel, "#{nick}: All selfies deleted."
         else
           deleted = 0
           for arg in args
-            dtops = doc.dtops
+            selfies = doc.dtops
             if arg.match /:/ then slice = arg.split ':'
             else if arg.match /\.\./ then slice = arg.split '..'
             else if arg.match /\-/ then slice = arg.split '-'
             if slice
-              if slice.every((index) -> ((!isNaN index) && ((parseInt index) == (Math.floor index)) index < doc.dtops.length))
-                doc.dtops.splice slice[0]-1, slice[1]-slice[0]
+              if slice.every((index) -> ((!isNaN index) && ((parseInt index) == (Math.floor index)) index < doc.selfies.length))
+                doc.selfies.splice slice[0]-1, slice[1]-slice[0]
               else invalid = true
             else
               if (!isNaN arg) && ((parseInt arg) == (Math.floor arg))
-                doc.dtops.splice arg - deleted, 1
+                doc.selfies.splice arg - deleted, 1
                 deleted++
               else
                 invalid = true
@@ -103,28 +102,28 @@ deleteDtop = (nick, channel, args, bot) ->
 
             doc.save (err) ->
               if deleted > 1
-                bot.say channel, "#{nick}: Desktops deleted."
+                bot.say channel, "#{nick}: Selfies deleted."
               else if deleted == 1
-                bot.say channel, "#{nick}: Desktop deleted."
+                bot.say channel, "#{nick}: Selfie deleted."
               else if deleted == 0
-                bot.say channel, "#{nick}: No desktops deleted."
+                bot.say channel, "#{nick}: No selfies deleted."
               if err then console.error "An error occurred: #{err}"
-    else bot.say channel, "#{nick}: You don't have any desktops to delete."
+    else bot.say channel, "#{nick}: You don't have any selfies to delete."
 
 replaceDtop = (nick, channel, args, bot) ->
   User.findOne {nick: nick}, (err, doc) ->
     if err then console.error "An error occured: #{err}"
     else
       if doc
-        if doc.dtops.length == 0 then bot.say channel, "#{nick}: You don't have any desktops to replace."
+        if doc.selfies.length == 0 then bot.say channel, "#{nick}: You don't have any selfies to replace."
         else
           changed = 0
           if args[0] == "*"
             if args[1]
               if validUrl.isUri(args[1])
-                doc.dtops = []
-                doc.dtops.push args[1]
-                changed = doc.dtops.length
+                doc.selfies = []
+                doc.selfies.push args[1]
+                changed = doc.selfies.length
               else
                 bot.say channel, "#{nick}: Invalid URL detected."
             else
@@ -133,7 +132,7 @@ replaceDtop = (nick, channel, args, bot) ->
             i = 0
             while i < args.length
               if validUrl.isUri(args[i+1])
-                doc.dtops.set args[i] - 1, args[i+1]
+                doc.selfies.set args[i] - 1, args[i+1]
                 changed++
               else
                 invalid = true
@@ -144,13 +143,13 @@ replaceDtop = (nick, channel, args, bot) ->
             if err then console.error "An error occured: #{err}"
             else
               if changed > 1
-                bot.say channel, "#{nick}: Desktops changed."
+                bot.say channel, "#{nick}: Selfies changed."
               if changed == 1
-                bot.say channel, "#{nick}: Desktop changed."
+                bot.say channel, "#{nick}: Selfie changed."
               else
-                bot.say channel, "#{nick}: No desktops changed."
-      else bot.say channel, "#{nick}: You don't have any desktops to delete."
+                bot.say channel, "#{nick}: No selfies changed."
+      else bot.say channel, "#{nick}: You don't have any selfies to delete."
 
 module.exports =
-  func: dtop
-  help: "Save desktops: .dtop [-a|--add] [-d|--delete] [-r|--replace] args (see https://github.com/nuclearcoconut42/nano-chan)"
+  func: selfie
+  help: "Save selfies: .selfie [-a|--add] [-d|--delete] [-r|--replace] args (see https://github.com/nuclearcoconut42/nano-chan)"

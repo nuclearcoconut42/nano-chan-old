@@ -9,5 +9,7 @@ userSchema = new Schema
   domain: String,
   hws: [String],
   waifu: String,
-  hscrs: [String]
+  hscrs: [String],
+	selfies: [String],
+	mal: String
 module.exports = userSchema
