@@ -18,6 +18,7 @@ db.once 'open', ->
 	bot.addListener 'registered', -> bot.say 'NickServ', 'identify ' + config.password
 
 	bot.addListener 'message', (from, to, message) ->
+		message = message.trim()
 		if message.match /^\.bots/
 			bot.notice to, "Reporting in! [node.js] (https://github.com/nuclearcoconut42/nano-chan)"
 		else if message.match /^\.help/
@@ -40,11 +41,13 @@ db.once 'open', ->
 			split = message.split ' '
 			command = split[0].substring 1
 			if modules[command] then bot.say to, "#{from}: #{modules[command].help}"
+			else if alias[command] then bot.say to, "#{from}: #{alias[command].help}"
 			else bot.say to, "#{from}: Unknown command."
 		# if message.match /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b(-a-zA-Z0-9@:%_\+.~#?&=]*)/
 		# 	client = new meta(
 
 	bot.addListener 'pm', (from,  message) ->
+		message = message.trim()
 		if message.match /^\.help/
 			bot.notice from, "List of commands: #{JSON.stringify Object.keys(modules)}"
 		else if message.match /^\./
@@ -64,6 +67,7 @@ db.once 'open', ->
 			split = message.split ' '
 			command = split[0].substring 1
 			if modules[command] then bot.say from, "#{from}: #{modules[command].help}"
+			else if alias[command] then bot.say to, "#{from}: #{alias[command].help}"
 			else bot.say from, "#{from}: Unknown command."
 		# if message.match /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b(-a-zA-Z0-9@:%_\+.~#?&=]*)/
 		# 	client = new meta(

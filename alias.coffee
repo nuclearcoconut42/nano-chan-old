@@ -1,6 +1,7 @@
 module.exports = {
   "desktop": require("./modules/dtop"),
   "gh": require("./modules/github"),
+  "homescreen": require("./modules/hscr"),
   "handwriting": require("./modules/hw"),
-  "homescreen": require("./modules/hscr")
+	"roll": require("./modules/dice")
 }
