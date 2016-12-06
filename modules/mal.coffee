@@ -5,7 +5,7 @@ User = mongoose.model('User', userSchema)
 
 mal = (bot, data) ->
   if data.args.length == 0
-    viewWaifu data.to, data.from, bot
+    viewMAL data.to, data.from, bot
   else
     switch data.args[0]
       when "-s", "--set"
@@ -13,9 +13,9 @@ mal = (bot, data) ->
           checkUser data.from, data.to, data.args[1..].join(" "), bot
         else
           checkUser data.from, data.to, "", bot
-      else viewWaifu data.to, data.args[0], bot
+      else viewMAL data.to, data.args[0], bot
 
-viewWaifu = (channel, nick, bot) ->
+viewMAL = (channel, nick, bot) ->
   User.findOne {nick: nick}, (err, doc) ->
     if err then console.error "An error occurred: #{err}"
     if doc
@@ -34,7 +34,7 @@ checkUser = (nick, channel, mal, bot) ->
       doc.save (err) ->
         if err then console.error "An error occurred: #{err}"
         else
-          bot.say channel, "#{nick}: Saved MAL acount."
+          bot.say channel, "#{nick}: Saved MAL account."
     if !doc
       addUser nick, channel, mal, bot
 
