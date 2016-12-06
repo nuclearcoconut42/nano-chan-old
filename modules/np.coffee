@@ -43,7 +43,6 @@ checkUser = (nick, channel, lastfm, bot) ->
 		if doc
 			doc.lastfm = lastfm
 			doc.save (err) ->
-				console.log doc
 				if err then console.error "An error occurred: #{err}"
 				else
 					bot.say channel, "#{nick}: Saved last.fm account."
