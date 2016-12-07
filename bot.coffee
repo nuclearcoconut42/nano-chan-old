@@ -43,8 +43,17 @@ db.once 'open', ->
 			if modules[command] then bot.say to, "#{from}: #{modules[command].help}"
 			else if alias[command] then bot.say to, "#{from}: #{alias[command].help}"
 			else bot.say to, "#{from}: Unknown command."
-		# if message.match /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b(-a-zA-Z0-9@:%_\+.~#?&=]*)/
-		# 	client = new meta(
+		else
+			urls = message.match(/https?:\/\/[^\s/$.?#].[^\s]*/g)
+			inspect = (url) ->
+					client = new meta url,
+						timeout: 5000
+					client.on "fetch", ->
+						bot.say to, "[#{client.host}] #{if client.title then client.title else '(No title)'}"
+					client.fetch()
+			if urls
+				for url in urls
+					inspect url
 
 	bot.addListener 'pm', (from,  message) ->
 		message = message.trim()
@@ -69,5 +78,14 @@ db.once 'open', ->
 			if modules[command] then bot.say from, "#{from}: #{modules[command].help}"
 			else if alias[command] then bot.say to, "#{from}: #{alias[command].help}"
 			else bot.say from, "#{from}: Unknown command."
-		# if message.match /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b(-a-zA-Z0-9@:%_\+.~#?&=]*)/
-		# 	client = new meta(
+		else
+			urls = message.match(/https?:\/\/[^\s/$.?#].[^\s]*/g)
+			inspect = (url) ->
+					client = new meta url,
+						timeout: 5000
+					client.on "fetch", ->
+						bot.say from, "[#{client.host}] #{if client.title then client.title else '(No title)'}"
+					client.fetch()
+			if urls
+				for url in urls
+					inspect url
