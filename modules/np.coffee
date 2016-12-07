@@ -28,7 +28,6 @@ nowplaying = (channel, nick, bot) ->
 			lfm.user_getRecentTracks({ 
 				callback: (res) ->
 					track = res['track'][0]
-					console.log track
 					if track['@attr'] && track['@attr']['nowplaying']
 						bot.say channel, "#{nick}: #{track['artist']['#text']} - #{track['name']}"
 					else
