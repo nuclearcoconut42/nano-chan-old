@@ -36,24 +36,25 @@ db.once 'open', ->
 				from: from
 				to: to
 				args: args
-			else bot.say to, "#{from}: Unknown command"
+#			else bot.say to, "#{from}: Unknown command"
 		else if message.match /^\?./
 			split = message.split ' '
 			command = split[0].substring 1
 			if modules[command] then bot.say to, "#{from}: #{modules[command].help}"
 			else if alias[command] then bot.say to, "#{from}: #{alias[command].help}"
-			else bot.say to, "#{from}: Unknown command."
-		else
-			urls = message.match(/https?:\/\/[^\s/$.?#].[^\s]*/g)
-			inspect = (url) ->
-					client = new meta url,
-						timeout: 5000
-					client.on "fetch", ->
-						bot.say to, "[#{client.host}] #{if client.title then client.title else '(No title)'}"
-					client.fetch()
-			if urls
-				for url in urls
-					inspect url
+#			else bot.say to, "#{from}: Unknown command."
+#		else
+#			urls = message.match(/https?:\/\/[^\s/$.?#].[^\s]*/g)
+#			inspect = (url) ->
+#					client = new meta url,
+#						timeout: 5000
+#						limit: 10000
+#					client.on "fetch", ->
+#						bot.say to, "[#{client.host}] #{if client.title then client.title else '(No title)'}"
+#					client.fetch()
+#			if urls
+#				for url in urls
+#					inspect url
 
 	bot.addListener 'pm', (from,  message) ->
 		message = message.trim()
@@ -71,21 +72,22 @@ db.once 'open', ->
 				from: from
 				to: from
 				args: args
-			else bot.say from, "#{from}: Unknown command"
+#			else bot.say from, "#{from}: Unknown command"
 		else if message.match /^\?./
 			split = message.split ' '
 			command = split[0].substring 1
 			if modules[command] then bot.say from, "#{from}: #{modules[command].help}"
 			else if alias[command] then bot.say to, "#{from}: #{alias[command].help}"
-			else bot.say from, "#{from}: Unknown command."
-		else
-			urls = message.match(/https?:\/\/[^\s/$.?#].[^\s]*/g)
-			inspect = (url) ->
-					client = new meta url,
-						timeout: 5000
-					client.on "fetch", ->
-						bot.say from, "[#{client.host}] #{if client.title then client.title else '(No title)'}"
-					client.fetch()
-			if urls
-				for url in urls
-					inspect url
+#			else bot.say from, "#{from}: Unknown command."
+#		else
+#			urls = message.match(/https?:\/\/[^\s/$.?#].[^\s]*/g)
+#			inspect = (url) ->
+#					client = new meta url,
+#						timeout: 5000
+#						limit: 10000
+#					client.on "fetch", ->
+#						bot.say from, "[#{client.host}] #{if client.title then client.title else '(No title)'}"
+#					client.fetch()
+#			if urls
+#				for url in urls
+#					inspect url

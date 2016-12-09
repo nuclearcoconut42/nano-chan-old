@@ -12,5 +12,6 @@ userSchema = new Schema
 	waifu: String,
 	hscrs: [String],
 	selfies: [String],
-	lastfm: String
+	lastfm: String,
+	wm: String
 module.exports = userSchema
