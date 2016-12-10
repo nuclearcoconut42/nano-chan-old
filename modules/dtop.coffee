@@ -1,8 +1,10 @@
 userSchema = require "../schemas/user"
+dtopSchema = require "../schemas/dtop"
 validUrl = require "valid-url"
 mongoose = require "mongoose"
 
 User = mongoose.model('User', userSchema)
+Dtop = mongoose.model('Dtop', dtopSchema)
 
 dtop = (bot, data) ->
   if data.args.length == 0
@@ -26,11 +28,18 @@ dtop = (bot, data) ->
         if data.args.length > 1
           replaceDtop data.from, data.to, data.args[1..], bot
         else
-          bot.say data.to, "#{data.from}: Arguments are required for -r."
-      else viewDtops data.to, data.args[0], bot
+          bot.say data.to, "#{data.from}: Arguments are required for -r."i
+      when "-t", "--tags"
+        if data.args.length > 1
+          viewDtops data.to, data.from, data.args[1..], bot
+        else
+          bot.say data.to, "#{data.from}: Arguments are required for -t."
+      else
+        if data.args.length > 2 && data.args[1] == "-t" || data.args[1] == "--tags"
+          viewDtops data.to, data.args[0], data.args[2..], data
 
-viewDtops = (channel, nick, bot) ->
-  User.findOne {nick: nick}, (err, doc) ->
+viewDtops = (channel, nick, tags, bot) ->
+  Dtop.findOne {nick: nick, tags: {$all: tags}}, (err, doc) ->
     if err then console.error "An error occurred: #{err}"
     if doc
       if doc.dtops.length == 0
