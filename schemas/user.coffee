@@ -3,7 +3,6 @@ Schema = mongoose.Schema
 
 userSchema = new Schema
 	nick: String,
-	dtops: [String],
 	distro: String,
 	github: String,
 	domain: String,
