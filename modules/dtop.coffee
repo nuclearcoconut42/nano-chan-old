@@ -15,7 +15,6 @@ dtop = (message, nick, cb) ->
 	else
 		switch args[1]
 			when '-a', '--add'
-				console.log 'memes'
 				regex = /\.dtop --?[a-z]+ (\S+) ?((#\S+ ?)*)/g
 				dtops = []
 				while match = regex.exec message
@@ -45,17 +44,19 @@ dtop = (message, nick, cb) ->
 				replaceDtops selection, dtops, nick, cb
 			else
 				if args[1][0] == '#'
+					console.log 'memes'
 					regex = /(#\S+)/g
 					tags = []
 					while match = regex.exec message
 						tags.push match[1]
 					viewDtops nick, tags, cb
-				regex = /((#\S+ ?)+)|([a-zA-Z]+)/
-				tags = []
-				while match = regex.exec message
-					if match[2] then tags.push match[1]
-					if match[3] then user = match[2]
-				viewDtops user, tags, cb
+				else
+					regex = /((#\S+ ?)+)|([a-zA-Z]+)/
+					tags = []
+					while match = regex.exec message
+						if match[2] then tags.push match[1]
+						if match[3] then user = match[2]
+					viewDtops user, tags, cb
 
 viewDtops = (nick, tags, cb) ->
 	console.log nick, tags
@@ -63,15 +64,15 @@ viewDtops = (nick, tags, cb) ->
 	if nick && tags.length > 0
 		query = User.findOne
 			nick: nick
-			dtops:
-				tags:
+			"dtops.tags":
 					$all: tags
 		assert.ok(query.exec() instanceof require('q').makePromise)
 		query.exec().then (doc) ->
-			if doc
+			console.log 'got response'
+			if doc && doc.dtops.length > 0
 				ret = "(#{nick}) "
 				doc.dtops.forEach (element, index) ->
-					ret += "[#{index}] #{element.dtop} #{JSON.stringify element.tags} "
+					ret += "[#{index+1}] #{element.dtop} #{JSON.stringify element.tags} "
 			else
 				cb "No desktops found."
 			cb ret
@@ -80,7 +81,7 @@ viewDtops = (nick, tags, cb) ->
 			nick: nick
 		assert.ok(query.exec() instanceof require('q').makePromise)
 		query.exec().then (doc) ->
-			if doc
+			if doc && doc.dtops.length > 0
 				ret = "(#{nick}) "
 				doc.dtops.forEach (element, index) ->
 					ret += "[#{index+1}] #{element.dtop} #{JSON.stringify element.tags} "
@@ -111,6 +112,8 @@ addDtops = (dtops, nick, cb) ->
 	cb "Saved."
 
 deleteDtops = (ids, tags, nick, cb) ->
+	ids.map (element) ->
+		element--
 	User.findOne
 		nick: nick
 		(err, doc) ->
@@ -128,8 +131,8 @@ replaceDtops = (ids, dtops, nick, cb) ->
 			if doc
 				ids.forEach (element, index) ->
 					dtops[element] =
-						dtop: dtops[index][0]
-						tags: dtops[index][1]
+						dtop: dtops[index-1][0]
+						tags: dtops[index-1][1]
 					doc.save (err) -> console.error err
 	cb "Replaced."
 
