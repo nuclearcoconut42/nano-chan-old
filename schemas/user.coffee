@@ -1,13 +1,9 @@
 mongoose = require 'mongoose'
 Schema = mongoose.Schema
 
-dtopSchema = new Schema
-  dtop: String
-  tags: String
-
 userSchema = new Schema
 	nick: String
-  dtops: [dtopSchema]
+	dtops: [{dtop: String, tags: [String]}]
 	distro: String
 	github: String
 	domain: String

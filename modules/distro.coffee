@@ -3,50 +3,49 @@ mongoose = require "mongoose"
 
 User = mongoose.model('User', userSchema)
 
-distro = (bot, data) ->
-  if data.args.length == 0
-    viewDistro data.to, data.from, bot
-  else
-    switch data.args[0]
-      when "-s", "--set"
-        if data.args.length > 1
-          checkUser data.from, data.to, data.args[1..].join(" "), bot
-        else
-          checkUser data.from, data.to, "", bot
-      else viewDistro data.to, data.args[0], bot
+distro = (message, nick) ->
+	args = message.split ' '
+	if args.length == 1
+		viewDistro nick
+	else
+		switch args[1]
+			when "-s", "--set"
+				checkUser nick, message.replace(/\S+/, '').trim()
+			else viewDistro args[1]
 
-viewDistro = (channel, nick, bot) ->
-  User.findOne {nick: nick}, (err, doc) ->
-    if err then console.error "An error occurred: #{err}"
-    if doc
-      if doc.distro
-        bot.say channel, "(#{nick}) #{doc.distro}"
-      else
-        bot.say channel, "No distro found for #{nick}."
-    else
-      bot.say channel, "No distro found for #{nick}."
+viewDistro = (nick) ->
+	User.findOne {nick: nick}, (err, doc) ->
+		if err then console.error "An error occurred: #{err}"
+		if doc
+			if doc.distro
+				doc.distro
+			else
+				"No distro found for #{nick}."
+		else
+			"No distro found for #{nick}."
 
-checkUser = (nick, channel, distro, bot) ->
-  User.findOne {nick: nick}, (err, doc) ->
-    if err then console.error "An error occurred: #{err}"
-    if doc
-      doc.distro = distro
-      doc.save (err) ->
-        if err then console.error "An error occurred: #{err}"
-        else
-          bot.say channel, "#{nick}: Saved distro."
-    if !doc
-      addUser nick, channel, distro, bot
+checkUser = (nick, distro) ->
+	User.findOne {nick: nick}, (err, doc) ->
+		if err then console.error "An error occurred: #{err}"
+		if doc
+			doc.distro = distro
+			changed = true
+			doc.save (err) ->
+				if err then console.error "An error occurred: #{err}"
+				else
+					if changed then "Saved distro."
+		if !doc
+			addUser nick, distro
 
-addUser = (nick, channel, distro, bot) ->
-  newUser = new User
-    nick: nick
-    distro: distro
-  newUser.save (err) ->
-    if err then console.err "An error occurred: #{err}"
-    else
-      bot.say channel, "#{nick}: Saved distro."
+addUser = (nick, distro) ->
+	newUser = new User
+		nick: nick
+		distro: distro
+	newUser.save (err) ->
+		if err then console.err "An error occurred: #{err}"
+		else
+			"Saved distro."
 
 module.exports =
-  func: distro
-  help: "Save distro: .distro -s distro"
+	func: distro
+	help: "Save distro: .distro -s distro"

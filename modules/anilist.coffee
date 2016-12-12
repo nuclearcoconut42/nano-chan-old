@@ -4,30 +4,28 @@ validUrl = require "valid-url"
 
 User = mongoose.model('User', userSchema)
 
-anilist = (bot, data) ->
-	if data.args.length == 0
-		viewAnilist data.to, data.from, bot
+anilist = (message, nick) ->
+	args = message.split ' '
+	if args.length == 1
+		viewAnilist nick
 	else
-		switch data.args[0]
+		switch args[1]
 			when "-s", "--set"
-				if data.args.length > 1
-					checkUser data.from, data.to, data.args[1..].join(" "), bot
-				else
-					checkUser data.from, data.to, "", bot
-			else viewAnilist data.to, data.args[0], bot
+				checkUser nick, message.replace(/\S+/, '').trim()
+			else viewAnilist args[1]
 
-viewAnilist = (channel, nick, bot) ->
+viewAnilist = (nick) ->
 	User.findOne {nick: nick}, (err, doc) ->
 		if err then console.error "An error occurred: #{err}"
 		if doc
 			if doc.anilist
-				bot.say channel, "(#{nick}) #{doc.anilist}"
+				doc.anilist
 			else
-				bot.say channel, "No anilist found for #{nick}."
+				"No anilist found for #{nick}."
 		else
-			bot.say channel, "No anilist found for #{nick}."
+			"No anilist found for #{nick}."
 
-checkUser = (nick, channel, anilist, bot) ->
+checkUser = (nick, anilist) ->
 	User.findOne {nick: nick}, (err, doc) ->
 		if err then console.error "An error occurred: #{err}"
 		if doc
@@ -35,25 +33,25 @@ checkUser = (nick, channel, anilist, bot) ->
 				doc.anilist = anilist
 				changed = true
 			else
-				bot.say channel, "Invalid URL detected."
+				"Invalid URL detected."
 			doc.save (err) ->
 				if err then console.error "An error occurred: #{err}"
 				else
-					if changed then bot.say channel, "#{nick}: Saved anilist."
+					if changed then "Saved anilist."
 		if !doc
-			addUser nick, channel, anilist, bot
+			addUser nick, anilist
 
-addUser = (nick, channel, anilist, bot) ->
-	if validUrl.isUri(anilist)
+addUser = (nick, anilist) ->
+	if validUrl.isUri anilist
 		newUser = new User
 			nick: nick
 			anilist: anilist
 	else
-		bot.say channel, "Invalid URL detected."
+		"Invalid URL detected."
 	newUser.save (err) ->
 		if err then console.err "An error occurred: #{err}"
 		else
-			bot.say channel, "#{nick}: Saved anilist."
+			"Saved anilist."
 
 module.exports =
 	func: anilist

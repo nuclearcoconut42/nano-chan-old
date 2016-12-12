@@ -1,164 +1,138 @@
 userSchema = require "../schemas/user"
-dtopSchema = require "../schemas/dtop"
 validUrl = require "valid-url"
 mongoose = require "mongoose"
+_ = require "lodash"
+assert = require "assert"
 
-User = mongoose.model('User', userSchema)
-Dtop = mongoose.model('Dtop', dtopSchema)
+mongoose.Promise = require('q').Promise
 
-dtop = (bot, data) ->
-  if data.args.length == 0
-    viewDtops data.to, data.from, bot
-  else
-    switch data.args[0]
-      when "-a", "--add"
-        if data.args.length > 1
-          if data.args[1..].every((url) -> validUrl.isUri(url))
-            checkUser data.from, data.to, data.args[1..], bot
-          else
-            bot.say data.to, "#{data.from}: Invalid URL detected."
-        else
-          bot.say data.to, "#{data.from}: Arguments are required for -a."
-      when "-d", "--delete", "--remove"
-        if data.args.length > 1
-          deleteDtop data.from, data.to, data.args[1..], bot
-        else
-          bot.say data.to, "#{data.from}: Arguments are required for -d."
-      when "-r", "--replace"
-        if data.args.length > 1
-          replaceDtop data.from, data.to, data.args[1..], bot
-        else
-          bot.say data.to, "#{data.from}: Arguments are required for -r."i
-      when "-t", "--tags"
-        if data.args.length > 1
-          viewDtops data.to, data.from, data.args[1..], bot
-        else
-          bot.say data.to, "#{data.from}: Arguments are required for -t."
-      else
-        if data.args.length > 2 && data.args[1] == "-t" || data.args[1] == "--tags"
-          viewDtops data.to, data.args[0], data.args[2..], data
+User = mongoose.model 'User', userSchema, 'users'
 
-viewDtops = (channel, nick, tags, bot) ->
-  Dtop.findOne {nick: nick, tags: {$all: tags}}, (err, doc) ->
-    if err then console.error "An error occurred: #{err}"
-    if doc
-      if doc.dtops.length == 0
-        bot.say channel, "No desktops found for #{nick}."
-      else
-        i = 0
-        say = "(#{nick}) "
-        while i < doc.dtops.length - 1
-          say += "[#{i + 1}] #{doc.dtops[i]} "
-          i++
-        say += "[#{doc.dtops.length}] #{doc.dtops[doc.dtops.length - 1]}"
-        bot.say channel, say
-    else
-      bot.say channel, "No desktops found for #{nick}."
+dtop = (message, nick, cb) ->
+	args = message.split ' '
+	if args.length == 1
+		return viewDtops nick, [], cb
+	else
+		switch args[1]
+			when '-a', '--add'
+				console.log 'memes'
+				regex = /\.dtop --?[a-z]+ (\S+) ?((#\S+ ?)*)/g
+				dtops = []
+				while match = regex.exec message
+					console.log match
+					if match[3]
+						dtops.push [match[1], match[3].trim().split ' ']
+					else
+						dtops.push [match[1], []]
+				addDtops dtops, nick, cb
+			when '-d', '--delete', '--remove'
+				regex = /(\d+)|((\d+)(-|\||(..))(\d+))|(#\S+)/g
+				selection = []
+				tags = []
+				while match = regex.exec message
+					if match[1] then selection.push match[1]
+					if match[2] && match[3] && match[6]
+						selection.concat [match[3]..match[6]]
+					if match[7] then tags.push match[7]
+				deleteDtops selection, tags, nick, cb
+			when '-r', '--replace'
+				regex = /(\d+) (\S+) ?((#\S+ ?)+)/g
+				selection = []
+				dtops = []
+				while match = regex.exec message
+					ids.push match[1]
+					dtops.push [match[2], match[3].trim().split ' ']
+				replaceDtops selection, dtops, nick, cb
+			else
+				if args[1][0] == '#'
+					regex = /(#\S+)/g
+					tags = []
+					while match = regex.exec message
+						tags.push match[1]
+					viewDtops nick, tags, cb
+				regex = /((#\S+ ?)+)|([a-zA-Z]+)/
+				tags = []
+				while match = regex.exec message
+					if match[2] then tags.push match[1]
+					if match[3] then user = match[2]
+				viewDtops user, tags, cb
 
-checkUser = (nick, channel, urls, bot) ->
-  User.findOne {nick: nick}, (err, doc) ->
-    if err then console.error "An error occurred: #{err}"
-    if doc
-      doc.dtops = doc.dtops.concat urls[..10 - doc.dtops.length]
-      doc.save (err) ->
-        if err then console.error "An error occurred: #{err}"
-        else
-          if urls.length > 1 then bot.say channel, "#{nick}: Saved new desktops."
-          else  bot.say channel, "#{nick}: Saved new desktop."
-    if !doc
-      addUser nick, channel, urls, bot
+viewDtops = (nick, tags, cb) ->
+	console.log nick, tags
+	ret = ""
+	if nick && tags.length > 0
+		query = User.findOne
+			nick: nick
+			dtops:
+				tags:
+					$all: tags
+		assert.ok(query.exec() instanceof require('q').makePromise)
+		query.exec().then (doc) ->
+			if doc
+				ret = "(#{nick}) "
+				doc.dtops.forEach (element, index) ->
+					ret += "[#{index}] #{element.dtop} #{JSON.stringify element.tags} "
+			else
+				cb "No desktops found."
+			cb ret
+	else if nick
+		query = User.findOne
+			nick: nick
+		assert.ok(query.exec() instanceof require('q').makePromise)
+		query.exec().then (doc) ->
+			if doc
+				ret = "(#{nick}) "
+				doc.dtops.forEach (element, index) ->
+					ret += "[#{index+1}] #{element.dtop} #{JSON.stringify element.tags} "
+			cb ret
 
-addUser = (nick, channel, urls, bot) ->
-  newUser = new User
-    nick: nick
-    dtops: urls
-  newUser.save (err) ->
-    if err then console.err "An error occurred: #{err}"
-    else
-      if urls.length > 1 then bot.say channel, "#{nick}: Saved new desktops."
-      else bot.say channel, "#{nick}: Saved new desktop."
+addDtops = (dtops, nick, cb) ->
+	for dtop in dtops
+		if validUrl.isUri(dtop[0])
+			User.findOne {nick: nick}, (err, doc) ->
+				if doc
+					console.log doc
+					doc.dtops.push
+						dtop: dtop[0]
+						tags: dtop[1]
+					doc.save (err) ->
+						if err then console.error err
+				else
+					User.create
+						dtops: [
+							dtop: dtop[0]
+							tags: dtop[1]
+						]
+						nick: nick
+						(err, doc) ->
+							console.log "doc: #{doc}"
+							console.log "dtops: #{doc.dtops}"
+							if err then console.error err
+	cb "Saved."
 
-deleteDtop = (nick, channel, args, bot) ->
-  User.findOne {nick: nick}, (err, doc) ->
-    if err then console.error "An error occurred: #{err}"
-    if doc
-      if doc.dtops.length == 0
-        bot.say channel, "#{nick}: You don't have any desktops to delete."
-      else
-        if args[0] == "*"
-          doc.dtops = []
-          bot.say channel, "#{nick}: All desktops deleted."
-        else
-          deleted = 0
-          for arg in args
-            dtops = doc.dtops
-            if arg.match /:/ then slice = arg.split ':'
-            else if arg.match /\.\./ then slice = arg.split '..'
-            else if arg.match /\-/ then slice = arg.split '-'
-            if slice
-              if slice.every((index) -> ((!isNaN index) && ((parseInt index) == (Math.floor index)) index < doc.dtops.length))
-                doc.dtops.splice slice[0]-1, slice[1]-slice[0]
-              else invalid = true
-            else
-              if (!isNaN arg) && ((parseInt arg) == (Math.floor arg))
-                doc.dtops.splice arg - deleted, 1
-                deleted++
-              else
-                invalid = true
-          if invalid
-            bot.say channel, "#{nick}: Non-integer value detected."
-          else
+deleteDtops = (ids, tags, nick, cb) ->
+	User.findOne
+		nick: nick
+		(err, doc) ->
+			if doc
+				doc.dtops.forEach (element, index) ->
+					if index of ids || _.intersection element.tags, tags .length == tags.length
+						element.remove()
+				doc.save (err) -> console.error err
+	cb "Removed."
 
-            doc.save (err) ->
-              if deleted > 1
-                bot.say channel, "#{nick}: Desktops deleted."
-              else if deleted == 1
-                bot.say channel, "#{nick}: Desktop deleted."
-              else if deleted == 0
-                bot.say channel, "#{nick}: No desktops deleted."
-              if err then console.error "An error occurred: #{err}"
-    else bot.say channel, "#{nick}: You don't have any desktops to delete."
-
-replaceDtop = (nick, channel, args, bot) ->
-  User.findOne {nick: nick}, (err, doc) ->
-    if err then console.error "An error occured: #{err}"
-    else
-      if doc
-        if doc.dtops.length == 0 then bot.say channel, "#{nick}: You don't have any desktops to replace."
-        else
-          changed = 0
-          if args[0] == "*"
-            if args[1]
-              if validUrl.isUri(args[1])
-                doc.dtops = []
-                doc.dtops.push args[1]
-                changed = doc.dtops.length
-              else
-                bot.say channel, "#{nick}: Invalid URL detected."
-            else
-              bot.say channel, "#{nick}: Invalid arguments."
-          else
-            i = 0
-            while i < args.length
-              if validUrl.isUri(args[i+1])
-                doc.dtops.set args[i] - 1, args[i+1]
-                changed++
-              else
-                invalid = true
-              i += 2
-        if invalid then bot.say channel, "Invalid URL detected."
-        else
-          doc.save (err) ->
-            if err then console.error "An error occured: #{err}"
-            else
-              if changed > 1
-                bot.say channel, "#{nick}: Desktops changed."
-              if changed == 1
-                bot.say channel, "#{nick}: Desktop changed."
-              else
-                bot.say channel, "#{nick}: No desktops changed."
-      else bot.say channel, "#{nick}: You don't have any desktops to delete."
+replaceDtops = (ids, dtops, nick, cb) ->
+	User.findOne
+		nick: nick
+		(err, doc) ->
+			if doc
+				ids.forEach (element, index) ->
+					dtops[element] =
+						dtop: dtops[index][0]
+						tags: dtops[index][1]
+					doc.save (err) -> console.error err
+	cb "Replaced."
 
 module.exports =
-  func: dtop
-  help: "Save desktops: .dtop [-a|--add] [-d|--delete] [-r|--replace] args (see https://github.com/nuclearcoconut42/nano-chan)"
+	func: dtop
+	help: "Set your dtops: .dtop -a dtop [tags] dtop [tags] etc. (see https://github.com/nucclearcoconut42/nano-chan for more info."

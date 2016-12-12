@@ -1,3 +1,4 @@
+_ = require 'lodash'
 outputs =
   ["It is certain",
   "It is decidedly so",
@@ -20,5 +21,5 @@ outputs =
   "Outlook not so good",
   "Very doubtful"]
 module.exports =
-  func: (bot, data) -> bot.say data.to, "#{data.from}: #{outputs[Math.floor Math.random() * outputs.length]}"
+  func: (nick, channel, args) -> _.sample outputs
   help: "Magic eight ball!"

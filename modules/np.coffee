@@ -5,19 +5,20 @@ config = require "../config.coffee"
 
 User = mongoose.model('User', userSchema)
 
-np = (bot, data) ->
-	if data.args.length == 0
-		nowplaying data.to, data.from, bot
+np = (message, nick) ->
+	args = message.split(' ')[1..]
+	if args.length == 0
+		nowplaying nick
 	else
-		switch data.args[0]
+		switch args[0]
 			when "-s", "--set"
-				if data.args.length > 1
-					checkUser data.from, data.to, data.args[1], bot
+				if args.length > 1
+					checkUser data.from, data.to, args[1], bot
 				else
 					checkUser data.from, data.to, "", bot
-			else nowplaying data.to, data.args[0], bot
+			else nowplaying data.to, args[0], bot
 
-nowplaying = (channel, nick, bot) ->
+nowplaying = (nick) ->
 	User.findOne {nick: nick}, (err, doc) ->
 		if err then console.error "An error occurred: #{err}"
 		else if doc && doc.lastfm
@@ -25,16 +26,16 @@ nowplaying = (channel, nick, bot) ->
 				apiKey: config.lastfmApiKey
 				apiSecret: config.lastfmSecret
 				username: doc.lastfm
-			lfm.user_getRecentTracks({ 
+			lfm.user_getRecentTracks({
 				callback: (res) ->
 					track = res['track'][0]
 					if track['@attr'] && track['@attr']['nowplaying']
-						bot.say channel, "#{nick}: #{track['artist']['#text']} - #{track['name']}"
+						"#{track['artist']['#text']} - #{track['name']}"
 					else
-						bot.say channel, "#{nick}: #{doc.lastfm} isn't playing anything right now. Most recent track: #{track['artist']['#text']} - #{track['name']}"
+						"#{doc.lastfm} isn't playing anything right now. Most recent track: #{track['artist']['#text']} - #{track['name']}"
 			})
 		else
-			bot.say channel, "No last.fm account found for #{nick}."
+			"No last.fm account found for #{nick}."
 
 checkUser = (nick, channel, lastfm, bot) ->
 	User.findOne {nick: nick}, (err, doc) ->
@@ -44,7 +45,7 @@ checkUser = (nick, channel, lastfm, bot) ->
 			doc.save (err) ->
 				if err then console.error "An error occurred: #{err}"
 				else
-					bot.say channel, "#{nick}: Saved last.fm account."
+					"Saved last.fm account."
 		if !doc
 			addUser nick, channel, lastfm, bot
 
@@ -55,7 +56,7 @@ addUser = (nick, channel, lastfm, bot) ->
 	newUser.save (err) ->
 		if err then console.err "An error occurred: #{err}"
 		else
-			bot.say channel, "#{nick}: Saved last.fm account."
+			"Saved last.fm account."
 
 module.exports =
 	func: np

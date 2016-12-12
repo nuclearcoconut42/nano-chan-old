@@ -4,85 +4,86 @@ mongoose = require "mongoose"
 
 User = mongoose.model('User', userSchema)
 
-selfie = (bot, data) ->
-  if data.args.length == 0
-    viewDtops data.to, data.from, bot
+selfie = (message, nick) ->
+  args = message.split(' ')[1..]
+  if args.length == 0
+    viewSelfies nick
   else
-    switch data.args[0]
+    switch args[0]
       when "-a", "--add"
-        if data.args.length > 1
-          if data.args[1..].every((url) -> validUrl.isUri(url))
-            checkUser data.from, data.to, data.args[1..], bot
+        if args.length > 1
+          if args[1..].every((url) -> validUrl.isUri(url))
+            checkUser nick, args[1..]
           else
-            bot.say data.to, "#{data.from}: Invalid URL detected."
+            "Invalid URL detected."
         else
-          bot.say data.to, "#{data.from}: Arguments are required for -a."
+          "Arguments are required for -a."
       when "-d", "--delete", "--remove"
-        if data.args.length > 1
-          deleteDtop data.from, data.to, data.args[1..], bot
+        if args.length > 1
+          deleteSelfie nick, args[1..]
         else
-          bot.say data.to, "#{data.from}: Arguments are required for -d."
+          "Arguments are required for -d."
       when "-r", "--replace"
         if data.args.length > 1
-          replaceDtop data.from, data.to, data.args[1..], bot
+          replaceSelfie nick, data.args[1..]
         else
-          bot.say data.to, "#{data.from}: Arguments are required for -r."
-      else viewDtops data.to, data.args[0], bot
+          "Arguments are required for -r."
+      else viewSelfies args[0]
 
-viewDtops = (channel, nick, bot) ->
+viewSelfies = (nick) ->
   User.findOne {nick: nick}, (err, doc) ->
     if err then console.error "An error occurred: #{err}"
-		if doc?
+    if doc
       if doc.selfies.length == 0
-        bot.say channel, "No selfies found for #{nick}."
+        "No selfies found for #{nick}."
       else
         i = 0
         say = "(#{nick}) "
         while i < doc.selfies.length - 1
           say += "[#{i + 1}] #{doc.selfies[i]} "
           i++
-        say += "[#{doc.selfies.length}] #{doc.dtops[doc.dtops.length - 1]}"
-        bot.say channel, say
+        say += "[#{doc.selfies.length}] #{doc.selfies[doc.selfies.length - 1]}"
+        say
     else
-      bot.say channel, "No selfies found for #{nick}."
+      "No selfies found for #{nick}."
 
-checkUser = (nick, channel, urls, bot) ->
+checkUser = (nick, urls) ->
   User.findOne {nick: nick}, (err, doc) ->
     if err then console.error "An error occurred: #{err}"
     if doc
-      doc.selfies = doc.dtops.concat urls[..10 - doc.dtops.length]
+      doc.selfies = doc.selfies.concat urls[..10 - doc.selfies.length]
       doc.save (err) ->
         if err then console.error "An error occurred: #{err}"
         else
-          if urls.length > 1 then bot.say channel, "#{nick}: Saved new selfies."
-          else  bot.say channel, "#{nick}: Saved new selfie."
+          if urls.length > 1 then "Saved new selfies."
+          else "Saved new selfie."
     if !doc
-      addUser nick, channel, urls, bot
+      addUser nick, urls
 
-addUser = (nick, channel, urls, bot) ->
+addUser = (nick, urls) ->
   newUser = new User
     nick: nick
     selfies: urls
   newUser.save (err) ->
     if err then console.err "An error occurred: #{err}"
     else
-      if urls.length > 1 then bot.say channel, "#{nick}: Saved new selfies."
-      else bot.say channel, "#{nick}: Saved new selfie."
+      if urls.length > 1 then "Saved new selfies."
+      else "Saved new selfie."
 
-deleteDtop = (nick, channel, args, bot) ->
+deleteSelfie = (nick, args) ->
   User.findOne {nick: nick}, (err, doc) ->
     if err then console.error "An error occurred: #{err}"
     if doc
       if doc.selfies.length == 0
-        bot.say channel, "#{nick}: You don't have any selfies to delete."
+        "You don't have any selfies to delete."
       else
         if args[0] == "*"
           doc.selfies = []
-          bot.say channel, "#{nick}: All selfies deleted."
+          "All selfies deleted."
         else
           deleted = 0
           for arg in args
-            selfies = doc.dtops
+            selfies = doc.selfies
             if arg.match /:/ then slice = arg.split ':'
             else if arg.match /\.\./ then slice = arg.split '..'
             else if arg.match /\-/ then slice = arg.split '-'
@@ -97,25 +98,25 @@ deleteDtop = (nick, channel, args, bot) ->
               else
                 invalid = true
           if invalid
-            bot.say channel, "#{nick}: Non-integer value detected."
+            "Non-integer value detected."
           else
 
             doc.save (err) ->
               if deleted > 1
-                bot.say channel, "#{nick}: Selfies deleted."
+                "Selfies deleted."
               else if deleted == 1
-                bot.say channel, "#{nick}: Selfie deleted."
+                "Selfie deleted."
               else if deleted == 0
-                bot.say channel, "#{nick}: No selfies deleted."
+                "No selfies deleted."
               if err then console.error "An error occurred: #{err}"
-    else bot.say channel, "#{nick}: You don't have any selfies to delete."
+    else "You don't have any selfies to delete."
 
-replaceDtop = (nick, channel, args, bot) ->
+replaceSelfie = (nick, args) ->
   User.findOne {nick: nick}, (err, doc) ->
     if err then console.error "An error occured: #{err}"
     else
       if doc
-        if doc.selfies.length == 0 then bot.say channel, "#{nick}: You don't have any selfies to replace."
+        if doc.selfies.length == 0 then "You don't have any selfies to replace."
         else
           changed = 0
           if args[0] == "*"
@@ -124,10 +125,8 @@ replaceDtop = (nick, channel, args, bot) ->
                 doc.selfies = []
                 doc.selfies.push args[1]
                 changed = doc.selfies.length
-              else
-                bot.say channel, "#{nick}: Invalid URL detected."
-            else
-              bot.say channel, "#{nick}: Invalid arguments."
+              else "Invalid URL detected."
+            else "Invalid arguments."
           else
             i = 0
             while i < args.length
@@ -137,18 +136,15 @@ replaceDtop = (nick, channel, args, bot) ->
               else
                 invalid = true
               i += 2
-        if invalid then bot.say channel, "Invalid URL detected."
+        if invalid then "Invalid URL detected."
         else
           doc.save (err) ->
             if err then console.error "An error occured: #{err}"
             else
-              if changed > 1
-                bot.say channel, "#{nick}: Selfies changed."
-              if changed == 1
-                bot.say channel, "#{nick}: Selfie changed."
-              else
-                bot.say channel, "#{nick}: No selfies changed."
-      else bot.say channel, "#{nick}: You don't have any selfies to delete."
+              if changed > 1 then "Selfies changed."
+              if changed == 1 then "Selfie changed."
+              else "No selfies changed."
+      else "You don't have any selfies to delete."
 
 module.exports =
   func: selfie
